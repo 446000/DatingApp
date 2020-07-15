@@ -17,27 +17,28 @@ namespace DatingApp.API
 {
     public class Startup
     {
-        readonly string MyCors = "_myAllowSpecificOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
-
+        readonly string MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DataContext>(x => x.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
-            services.AddCors(options =>
-                {
-                    options.AddPolicy(MyCors,
-                    builder =>
-                    {
-                        builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
-                    });
-                });
             services.AddControllers();
+            services.AddDbContext<DataContext>(x => x.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddAuthorization();
+            services.AddCors(options =>
+        {
+            options.AddPolicy(MyAllowSpecificOrigins,
+            builder =>
+            {
+                builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+            });
+        });
+            services.AddScoped<IAuthRepository, AuthRepository>();
 
         }
 
@@ -49,14 +50,14 @@ namespace DatingApp.API
                 app.UseDeveloperExceptionPage();
             }
 
+
+            app.UseCors(MyAllowSpecificOrigins);
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
             app.UseAuthorization();
-
-            app.UseCors(MyCors);
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
